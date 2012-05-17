@@ -43,13 +43,13 @@ class AndroidDevice(models.Model):
     last_messaged - When did we last send a push to the device
     failed_push - Have we had a failure when pushing to this device? Flag it here.
     '''
-    device_id = models.CharField(max_length = 64, unique = True)
-    registration_id = models.CharField(max_length = 140)
-    collapse_key = models.CharField(max_length = 50)
-    last_messaged = models.DateTimeField(blank = True, default = datetime.datetime.now)
-    failed_push = models.BooleanField(default = False)
+    device_id = models.CharField(max_length=64, unique=True)
+    registration_id = models.CharField(max_length=140)
+    collapse_key = models.CharField(max_length=50)
+    last_messaged = models.DateTimeField(blank=True, default=datetime.datetime.now)
+    failed_push = models.BooleanField(default=False)
 
-    def send_message(self, delay_while_idle = False, **kwargs):
+    def send_message(self, delay_while_idle=False, **kwargs):
         '''
         Sends a message to the device.  
         
@@ -67,7 +67,7 @@ class AndroidDevice(models.Model):
         if delay_while_idle:
             values['delay_while_idle'] = ''
 
-        for key,value in kwargs.items():
+        for key, value in kwargs.items():
             values['data.%s' % key] = value
 
         headers = {
@@ -89,10 +89,16 @@ class AndroidDevice(models.Model):
                     self.save()
 
                 raise Exception(result[1])
-        except URLError:
-            return false
+        except URLError, error:
+            import logging
+            logger = logging.getLogger('django-c2dm')
+            logger.warning('URLError: %s' % (error,))
+            return False
         except Exception, error:
-            return false 
+            import logging
+            logger = logging.getLogger('django-c2dm')
+            logger.warning('Exception: %s' % (error,))
+            return False
 
     def __unicode__(self):
         return '%s' % self.device_id
@@ -110,7 +116,7 @@ def filter_failed_devices():
     '''
     Removes any devices with failed registration_id's from the database
     '''
-    for device in AndroidDevice.objects.filter(failed_push = True):
+    for device in AndroidDevice.objects.filter(failed_push=True):
         device.delete()
 
 def registration_completed_callback(sender, **kwargs):
@@ -118,5 +124,5 @@ def registration_completed_callback(sender, **kwargs):
     Returns a push response when the device has successfully registered.
     '''
     profile = kwargs['instance']
-    profile.send_message(message = 'Registration successful', result = '1')
-post_save.connect(registration_completed_callback, sender = AndroidDevice)
+    profile.send_message(message='Registration successful', result='1')
+post_save.connect(registration_completed_callback, sender=AndroidDevice)
