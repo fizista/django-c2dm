@@ -33,6 +33,9 @@ import datetime
 
 C2DM_URL = 'https://android.apis.google.com/c2dm/send'
 
+class AndroidDeviceException(Exception):
+    pass
+
 class AndroidDevice(models.Model):
     '''
     Profile of a c2dm-enabled Android device
@@ -88,16 +91,21 @@ class AndroidDevice(models.Model):
                     self.failed_push = True
                     self.save()
 
-                raise Exception(result[1])
+                raise AndroidDeviceException(result[1])
         except URLError, error:
             import logging
             logger = logging.getLogger('django-c2dm')
-            logger.warning('URLError: %s' % (error,))
+            logger.error('URLError: %s' % (error,))
+            return False
+        except AndroidDeviceException, error:
+            import logging
+            logger = logging.getLogger('django-c2dm')
+            logger.info('AndroidDeviceException: %s' % (error,))
             return False
         except Exception, error:
             import logging
             logger = logging.getLogger('django-c2dm')
-            logger.warning('Exception: %s' % (error,))
+            logger.error('Exception: %s' % (error,))
             return False
 
     def __unicode__(self):
