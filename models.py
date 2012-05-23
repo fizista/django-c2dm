@@ -23,33 +23,39 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+import hashlib
+import urllib, urllib2
+from urllib2 import URLError
+
 from django.db import models
 from django.conf import settings
 from django.db.models.signals import post_save
-
-import urllib, urllib2
-from urllib2 import URLError
-import datetime
+from django.utils import timezone
 
 C2DM_URL = 'https://android.apis.google.com/c2dm/send'
 
 class AndroidDeviceException(Exception):
     pass
 
+
+
 class AndroidDevice(models.Model):
     '''
     Profile of a c2dm-enabled Android device
 
-    device_id - Unique ID for the device.  Simply used as a default method to specify a device.
-    registration_id - Result of calling registration intent on the device. Subject to change.
+    device_id - Unique ID for the device.  Simply used as a default method 
+                to specify a device. For example: hash of a phone number, or
+                or serial number. The ideal algorithm for this: sha256
+    registration_id - Result of calling registration intent on the device. 
+                Subject to change.
     collapse_key - Required arbitrary collapse_key string.
     last_messaged - When did we last send a push to the device
     failed_push - Have we had a failure when pushing to this device? Flag it here.
     '''
-    device_id = models.CharField(max_length=64, unique=True)
+    device_id = models.CharField(max_length=64, unique=True) # hash of a phone 
+                                                             # number, or serial 
+                                                             # number. The best use for this sha256
     registration_id = models.CharField(max_length=140)
-    collapse_key = models.CharField(max_length=50)
-    last_messaged = models.DateTimeField(blank=True, default=datetime.datetime.now)
     failed_push = models.BooleanField(default=False)
 
     def send_message(self, delay_while_idle=False, **kwargs):
@@ -94,22 +100,46 @@ class AndroidDevice(models.Model):
                 raise AndroidDeviceException(result[1])
         except URLError, error:
             import logging
-            logger = logging.getLogger('django-c2dm')
+            logger = logging.getLogger('django_c2dm')
             logger.error('URLError: %s' % (error,))
             return False
         except AndroidDeviceException, error:
             import logging
-            logger = logging.getLogger('django-c2dm')
+            logger = logging.getLogger('django_c2dm')
             logger.info('AndroidDeviceException: %s' % (error,))
             return False
         except Exception, error:
             import logging
-            logger = logging.getLogger('django-c2dm')
+            logger = logging.getLogger('django_c2dm')
             logger.error('Exception: %s' % (error,))
             return False
 
     def __unicode__(self):
         return '%s' % self.device_id
+
+class AndroidDeviceMessageChannels(models.Model):
+    '''
+    collapse_key - Required arbitrary collapse_key string.
+    last_change - When did we last send a push to the device
+    '''
+    name = models.CharField(max_length=50)
+    message = models.TextField(max_length=950) # dump of the dictionary 
+                                               # by using pickle
+    last_change = models.DateTimeField(blank=True, default=timezone.now())
+
+    def get_collapse_key(self):
+        'Return collapse_key (size 32 bytes)'
+        return hashlib.md5(str(self.name) + str(self.id)).hexdigest()
+
+    def set_message(self, dictionary):
+        for name, data in dictionary.items():
+            pass
+
+class AndroidDeviceMessageGroups(models.Model):
+    device = models.ManyToManyField(AndroidDevice)
+    channel = models.ForeignKey(AndroidDeviceMessageChannels)
+
+
 
 def send_multiple_messages(device_list, **kwargs):
     '''
@@ -133,4 +163,4 @@ def registration_completed_callback(sender, **kwargs):
     '''
     profile = kwargs['instance']
     profile.send_message(message='Registration successful', result='1')
-post_save.connect(registration_completed_callback, sender=AndroidDevice)
+#post_save.connect(registration_completed_callback, sender=AndroidDevice)

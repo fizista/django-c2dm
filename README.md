@@ -15,7 +15,19 @@ Where YOUR_PUSH_ACCOUNT_AUTH_TOKEN is the ClientLogin token for your push accoun
 
 And then add django_c2dm to your INSTALLED_APPS.
 
-## Finding your ClientLogin token
+For urls.py file, add this code (or similar):
+
+	url(r'^c2dm/', include('django_c2dm.urls', namespace='c2dm')),
+	
+If you need to log errors or exceptions, add to the file settings.py like this code:
+
+	LOGGING['loggers']['django_c2dm'] = {
+            'handlers': ['console', 'mail_admins'],
+            'level': 'INFO',
+            'propagate': True,
+             }
+
+### Finding your ClientLogin token
 
 You can retrieve the ClientLogin token for your push account via cURL:
 
@@ -27,8 +39,15 @@ Copy everything in the response following Auth= to get your AUTH_TOKEN value.
 
 ## Usage
 
+### Send mesage
+
 To send a message to a device call send_message() on the model.  send_message() only needs kwargs as a parameter.
 Use this to populate the data.X fields in your message.  These fields will be provided as extras on the intent
 that the device receives.
 
 You can also set the delay_while_idle parameter to True to enable this feature.
+
+### Register device
+
+TODO: How to do it.
+

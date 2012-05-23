@@ -25,7 +25,7 @@
 
 from django.contrib import admin
 
-from models import AndroidDevice 
+from models import AndroidDevice
 
 def registration_id(object):
     return '%s...' % object.registration_id[:24]
@@ -35,9 +35,7 @@ class AndroidDeviceAdmin(admin.ModelAdmin):
     list_display = (
         'device_id',
         registration_id,
-        'collapse_key',
-        'last_messaged',
-        'failed_push' 
+        'failed_push'
     )
 
 admin.site.register(AndroidDevice, AndroidDeviceAdmin)
