@@ -1,4 +1,5 @@
 from django.http import HttpResponseRedirect, HttpResponse
+from django.core.exceptions import ValidationError
 from django.shortcuts import Http404
 from django.contrib.messages.api import get_messages
 
@@ -24,14 +25,25 @@ def set_registration_id(request):
                                      device_id=request.GET['device_id'])[0]
             # If there is such device, then we update "registration_id"
             ad.registration_id = request.GET['registration_id']
+            ad.full_clean()
             ad.save()
+
+        except ValidationError:
+
+            return HttpResponse(status=400)
 
         except IndexError:
 
-            ad = AndroidDevice()
-            ad.device_id = request.GET['device_id']
-            ad.registration_id = request.GET['registration_id']
-            ad.save()
+            try:
+                ad = AndroidDevice()
+                ad.device_id = request.GET['device_id']
+                ad.registration_id = request.GET['registration_id']
+                ad.full_clean()
+                ad.save()
+
+            except ValidationError:
+
+                return HttpResponse(status=400)
 
         return HttpResponse(status=200)
 

@@ -34,6 +34,9 @@ class RegistrationTest(unittest.TestCase):
                        'device_id': 'devid_001_very long text..very long text..very long text..very long text..very long text..very long text',
                        'registration_id': 'reg_id_001'}
         response = set_registration_id(request)
+        self.assertIsInstance(response, HttpResponse)
+        ad = AndroidDevice.objects.all()
+        self.assertEqual(response.status_code, 400)
 
         # no data
         request = HttpRequest()
