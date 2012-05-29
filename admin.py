@@ -25,11 +25,13 @@
 
 from django.contrib import admin
 
-from models import AndroidDevice
+from .models import AndroidDevice, MessageChannels, MessageGroups, \
+                    DeviceChannelInfo, MessageData
 
 def registration_id(object):
     return '%s...' % object.registration_id[:24]
 registration_id.short_description = "Registration ID"
+
 
 class AndroidDeviceAdmin(admin.ModelAdmin):
     list_display = (
@@ -38,4 +40,38 @@ class AndroidDeviceAdmin(admin.ModelAdmin):
         'failed_push'
     )
 
+
+class MessageDataAdmin(admin.ModelAdmin):
+    list_display = (
+        'key_name',
+        'last_change'
+    )
+
+
+class MessageChannelsAdmin(admin.ModelAdmin):
+    list_display = (
+        'name',
+        'last_change',
+        'collapse_key'
+    )
+
+
+class MessageGroupsAdmin(admin.ModelAdmin):
+    list_display = (
+        'name',
+        'channel'
+    )
+
+
+class DeviceChannelInfoAdmin(admin.ModelAdmin):
+    list_display = (
+        'device',
+        'channel',
+        'last_message'
+    )
+
+admin.site.register(DeviceChannelInfo, DeviceChannelInfoAdmin)
+admin.site.register(MessageData, MessageDataAdmin)
+admin.site.register(MessageChannels, MessageChannelsAdmin)
+admin.site.register(MessageGroups, MessageGroupsAdmin)
 admin.site.register(AndroidDevice, AndroidDeviceAdmin)
