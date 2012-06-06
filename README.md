@@ -13,7 +13,7 @@ Using django-c2dm is easy.  Add the following line to your settings.py file:
 
 Where YOUR_PUSH_ACCOUNT_AUTH_TOKEN is the ClientLogin token for your push account.
 
-And then add django_c2dm to your INSTALLED_APPS.
+And then add django_c2dm and celery to your INSTALLED_APPS.
 
 For urls.py file, add this code (or similar):
 

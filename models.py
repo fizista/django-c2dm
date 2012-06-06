@@ -26,19 +26,15 @@
 import hashlib
 import urllib, urllib2
 from urllib2 import URLError
+import datetime
 
+from django.utils.timezone import utc
 from django.db import models
-from django.conf import settings
 from django.db.models.signals import post_save
 from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
 
-C2DM_URL = 'https://android.apis.google.com/c2dm/send'
 MAX_MESSAGE_SIZE = 1024
-
-
-class AndroidDeviceException(Exception):
-    pass
 
 
 class AndroidDevice(models.Model):
@@ -62,64 +58,8 @@ class AndroidDevice(models.Model):
 
     class Meta:
         ordering = ['device_id']
-        verbose_name = _(u'android device')
-        verbose_name_plural = _(u'android devices')
-
-    def send_message(self, delay_while_idle=False, **kwargs):
-        '''
-        Sends a message to the device.  
-        
-        delay_while_idle - If included, indicates that the message should not be sent immediately if the device is idle. The server will wait for the device to become active, and then only the last message for each collapse_key value will be sent.
-        data.keyX fields are populated via kwargs.
-        '''
-        if self.failed_push:
-            return
-
-        values = {
-            'registration_id': self.registration_id,
-            'collapse_key': self.collapse_key,
-        }
-
-        if delay_while_idle:
-            values['delay_while_idle'] = ''
-
-        for key, value in kwargs.items():
-            values['data.%s' % key] = value
-
-        headers = {
-            'Authorization': 'GoogleLogin auth=%s' % settings.C2DM_AUTH_TOKEN,
-        }
-
-        try:
-            params = urllib.urlencode(values)
-            request = urllib2.Request(C2DM_URL, params, headers)
-
-            # Make the request
-            response = urllib2.urlopen(request)
-
-            result = response.read().split('=')
-
-            if 'Error' in result:
-                if result[1] == 'InvalidRegistration' or result[1] == 'NotRegistered':
-                    self.failed_push = True
-                    self.save()
-
-                raise AndroidDeviceException(result[1])
-        except URLError, error:
-            import logging
-            logger = logging.getLogger('django_c2dm')
-            logger.error('URLError: %s' % (error,))
-            return False
-        except AndroidDeviceException, error:
-            import logging
-            logger = logging.getLogger('django_c2dm')
-            logger.info('AndroidDeviceException: %s' % (error,))
-            return False
-        except Exception, error:
-            import logging
-            logger = logging.getLogger('django_c2dm')
-            logger.error('Exception: %s' % (error,))
-            return False
+        verbose_name = _(u'Android device')
+        verbose_name_plural = _(u'Android devices')
 
     def __unicode__(self):
         return '%s' % self.device_id
@@ -137,10 +77,15 @@ class MessageData(models.Model):
     last_change = models.DateTimeField(auto_now=True,
                                                 verbose_name=_(u'last change'))
 
+    class Meta:
+        ordering = ['name']
+        verbose_name = _(u'Message data')
+        verbose_name_plural = _(u'Message data')
+
     def key_name(self):
         'Return key name'
         return self.name or hex(self.id)[2:]
-    key_name.short_description = 'Key name X'
+    key_name.short_description = 'Key name'
 
     def __unicode__(self):
         return '%s' % (self.key_name())
@@ -165,8 +110,8 @@ class MessageChannels(models.Model):
 
     class Meta:
         ordering = ['name']
-        verbose_name = _(u'message channel')
-        verbose_name_plural = _(u'message channels')
+        verbose_name = _(u'Message channel')
+        verbose_name_plural = _(u'Message channels')
 
     def _get_collapse_key(self):
         'Return collapse_key (size 32 bytes)'
@@ -175,8 +120,14 @@ class MessageChannels(models.Model):
 
     def _get_last_change(self):
         'Return last change data in the channel'
-        #self.message.
-        return hashlib.md5(str(self.name) + str(self.id)).hexdigest()
+        last_change = datetime.datetime(1, 1, 1, tzinfo=utc)
+        for m in self.message.all():
+            if m.last_change > last_change:
+                last_change = m.last_change
+        if datetime.datetime(1, 1, 1, tzinfo=utc) == last_change:
+            return None
+        else:
+            return last_change
     last_change = property(_get_last_change)
 
     def clean(self):
@@ -198,9 +149,10 @@ class MessageChannels(models.Model):
         message_size += size(self.collapse_key)
 
         if MAX_MESSAGE_SIZE < message_size:
-            raise ValidationError(('The maximum message size is %d,' + \
-                                  ' but the message size is %d') %
-                                  (MAX_DATA_SIZE, message_size))
+            message = ('The maximum message size is %d,'
+                       ' but the message size is %d') % \
+                       (MAX_MESSAGE_SIZE, message_size)
+            raise ValidationError(message)
 
     def save(self, *args, **kwargs):
         super(MessageChannels, self).save(*args, **kwargs)
@@ -208,72 +160,45 @@ class MessageChannels(models.Model):
     def __unicode__(self):
         return '%s' % self.name
 
+class MessageGroups(models.Model):
+    '''
+    Message groups
+    
+    name - name of the group
+    '''
+    name = models.CharField(max_length=50, unique=True,
+                                                       verbose_name=_(u'name'))
+    class Meta:
+        verbose_name = _(u'Message group')
+        verbose_name_plural = _(u'Message groups')
+
+    def __unicode__(self):
+        return self.name
 
 class DeviceChannelInfo(models.Model):
     '''
     Device channel info
     
     last_message - When did we last send a push to the device
+    lock - time lock on the sending time
     '''
-    device = models.OneToOneField(AndroidDevice)
+    device = models.ForeignKey(AndroidDevice)
     channel = models.ForeignKey(MessageChannels)
-    last_message = models.DateTimeField(auto_now=True)
+    group = models.ForeignKey(MessageGroups)
+    last_message = models.DateTimeField(blank=True, null=True,
+                                        verbose_name=_(u'Last message'))
+    task = models.IntegerField(blank=True, null=True,
+                               verbose_name=_(u'Celery taks id'))
+
 
     class Meta:
-        unique_together = (('device', 'channel'),)
-        ordering = ['device', 'channel']
+        unique_together = (('device', 'channel', 'group'),)
+        ordering = ['group', 'device', 'channel']
         verbose_name = _(u'Device channel info')
         verbose_name_plural = _(u'Device channel info')
 
     def __unicode__(self):
-        return '%s-%s' % (self.device, self.channel.name)
+        return u'%s [%s/%s]' % (self.group, self.device, self.channel)
 
-
-class MessageGroups(models.Model):
-    '''
-    Message groups
-    
-    name - name of the group
-    channel - channel type
-    devices - list of devices
-    '''
-    name = models.CharField(max_length=50, unique=True,
-                                                       verbose_name=_(u'name'))
-    channel = models.ForeignKey(MessageChannels)
-    devices = models.ManyToManyField(DeviceChannelInfo)
-
-    class Meta:
-        ordering = ['channel']
-        verbose_name = _(u'message group')
-        verbose_name_plural = _(u'message groups')
-
-    def __unicode__(self):
-        return '%s' % self.channel.name
-
-
-
-def send_multiple_messages(device_list, **kwargs):
-    '''
-    Same as send_message but sends to a list of devices.
-
-    data.keyX fields are populated via kwargs.
-    '''
-    for device in device_list:
-        device.send_message(kwargs)
-
-def filter_failed_devices():
-    '''
-    Removes any devices with failed registration_id's from the database
-    '''
-    for device in AndroidDevice.objects.filter(failed_push=True):
-        device.delete()
-
-def registration_completed_callback(sender, **kwargs):
-    '''
-    Returns a push response when the device has successfully registered.
-    '''
-    profile = kwargs['instance']
-    profile.send_message(message='Registration successful', result='1')
-#post_save.connect(registration_completed_callback, sender=AndroidDevice)
 
 

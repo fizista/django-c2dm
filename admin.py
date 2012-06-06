@@ -24,13 +24,15 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 from django.contrib import admin
+from django.utils.translation import ugettext_lazy as _
+from django.utils.timezone import get_current_timezone, get_default_timezone
 
 from .models import AndroidDevice, MessageChannels, MessageGroups, \
                     DeviceChannelInfo, MessageData
 
 def registration_id(object):
     return '%s...' % object.registration_id[:24]
-registration_id.short_description = "Registration ID"
+registration_id.short_description = _('Registration ID')
 
 
 class AndroidDeviceAdmin(admin.ModelAdmin):
@@ -48,19 +50,44 @@ class MessageDataAdmin(admin.ModelAdmin):
     )
 
 
+def last_change_info(object):
+    return object._get_last_change().astimezone(get_current_timezone())
+last_change_info.short_description = _('Last change')
+
+
 class MessageChannelsAdmin(admin.ModelAdmin):
     list_display = (
         'name',
-        'last_change',
+        last_change_info,
         'collapse_key'
     )
+
+
+class DeviceChannelInfoInlineAdmin(admin.TabularInline):
+    model = DeviceChannelInfo
+    fk_name = 'group'
+    verbose_name = _('List devices')
+    verbose_name_plural = _('List devices')
+    readonly_fields = ('device', 'channel', 'group', 'last_message', 'task')
+    ordering = ('device',)
 
 
 class MessageGroupsAdmin(admin.ModelAdmin):
     list_display = (
         'name',
-        'channel'
     )
+    inlines = [
+        DeviceChannelInfoInlineAdmin,
+    ]
+#    fieldsets = (
+#        (None, {
+#            'fields': ('name',)
+#        }),
+#        (_('Advanced options'), {
+#            'classes': ('collapse',),
+#            'fields': ('enable_comments', 'registration_required', 'template_name')
+#        }),
+#    )
 
 
 class DeviceChannelInfoAdmin(admin.ModelAdmin):

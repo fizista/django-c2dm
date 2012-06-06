@@ -1,0 +1,84 @@
+[
+ {
+  "pk": 1,
+  "model": "django_c2dm.androiddevice",
+  "fields": {
+   "failed_push": false,
+   "registration_id": "regid_01",
+   "device_id": "dev_01"
+  }
+ },
+ {
+  "pk": 2,
+  "model": "django_c2dm.androiddevice",
+  "fields": {
+   "failed_push": false,
+   "registration_id": "regid_02",
+   "device_id": "dev_02"
+  }
+ },
+ {
+  "pk": 3,
+  "model": "django_c2dm.androiddevice",
+  "fields": {
+   "failed_push": false,
+   "registration_id": "regid_03",
+   "device_id": "dev_03"
+  }
+ },
+ {
+  "pk": 4,
+  "model": "django_c2dm.androiddevice",
+  "fields": {
+   "failed_push": false,
+   "registration_id": "regid_04",
+   "device_id": "dev_04"
+  }
+ },
+ {
+  "pk": 2,
+  "model": "django_c2dm.messagedata",
+  "fields": {
+   "last_change": "2012-06-02T14:07:26.027Z",
+   "data": "confirm 02",
+   "name": "confirm 02"
+  }
+ },
+ {
+  "pk": 3,
+  "model": "django_c2dm.messagedata",
+  "fields": {
+   "last_change": "2012-06-02T21:20:44.334Z",
+   "data": "confirm 03",
+   "name": "confirm 03"
+  }
+ },
+ {
+  "pk": 1,
+  "model": "django_c2dm.messagedata",
+  "fields": {
+   "last_change": "2012-06-02T14:07:11.264Z",
+   "data": "confirm 01",
+   "name": "confirm01"
+  }
+ },
+ {
+  "pk": 1,
+  "model": "django_c2dm.messagechannels",
+  "fields": {
+   "message": [
+    2,
+    3,
+    1
+   ],
+   "name": "confirmation of registration"
+  }
+ },
+ {
+  "pk": 1,
+  "model": "django_c2dm.messagegroups",
+  "fields": {
+   "name": "all devices"
+  }
+ }
+]
