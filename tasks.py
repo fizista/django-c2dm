@@ -8,84 +8,33 @@ from celery.decorators import task
 from django_c2dm.models import DeviceChannelInfo
 from django_c2dm import settings
 
-
 C2DM_URL = 'https://android.apis.google.com/c2dm/send'
 
-
-class TaskException(Exception):
-
-    def __init__(self, message, logger=None, *args, **kwargs):
-        if logger:
-            self._logger = logger
-            self.log_exception(message)
-        super(Exception, self).__init__(message)
-
-    def log_exception(self, message):
-        self._logger.error(message)
-
-
-class AndroidDeviceNotRegisteredException(TaskException):
-    '''
-    When the device is not registered.
-    
-    Expected error data:
-     'InvalidRegistration'
-     'NotRegistered'
-    '''
-    def log_exception(self, message):
-        self._logger.info(message)
-
-
-class AndroidDeviceSendMessageException(TaskException):
-    '''
-    Unexpected errors
-    '''
-    pass
-
-
-class DeviceChannelInfoException(TaskException):
-    '''
-    When the database table does not have a record
-    '''
-    def log_exception(self, message):
-        self._logger.info(message)
-
-
-#@task(rate_limit="5000/s") # Better global limits??
 @task
-def send_message(device_channel_info_id, delay_while_idle=False, **kwargs):
+def send_message(message_request, message_response, **kwargs):
     '''
     Sends a message to the device.
     
-    delay_while_idle - If included, indicates that the message should not be 
-                       sent immediately if the device is idle. The server will 
-                       wait for the device to become active, and then only the 
-                       last message for each collapse_key value will be sent.
+    message_request - object MessageRequest
+    message_response - object MessageResponse
     '''
     logger = send_message.get_logger(**kwargs)
+    message_request.set_logger(logger)
+    message_response.set_logger(logger)
+    message_response.set_request(message_request)
 
-    try:
-        dci = DeviceChannelInfo.objects.get(pk=device_channel_info_id)
-    except DeviceChannelInfo.DoesNotExist:
-        raise DeviceChannelInfoException(('Record pk=%d not '
-                                          'exists') % (device_channel_info_id))
-
-
-    if dci.device.failed_push:
-        logger.debug("Skip device 'Failed push' [DeviceChannelInfo id %d]" %
-                     device_channel_info_id)
-        return False
+    message_request.check_data()
 
     values = {
-        'registration_id': dci.device.registration_id,
-        'collapse_key': dci.channel.collapse_key,
+        'registration_id': message_request.get_registration_id(),
+        'collapse_key': message_request.get_collapse_key(),
     }
 
-    if delay_while_idle:
+    if message_request.get_delay_while_idle():
         values['delay_while_idle'] = ''
 
-    for message in dci.channel.message.all():
-        values['data.%s' % message.key_name] = message.data
+    for msg_key, msg_data in message_request.get_data().items():
+        values['data.%s' % msg_key] = msg_data
 
     headers = {
         'Authorization': 'GoogleLogin auth=%s' % settings.C2DM_AUTH_TOKEN,
@@ -100,61 +49,62 @@ def send_message(device_channel_info_id, delay_while_idle=False, **kwargs):
 
         if response.getcode() == 503:
             #server is temporarily unavailable. Wait Retry-After seconds
-            retry_after = int(response.info().getheader('Retry-After', '0'))
+            retry_after = int(response.info().getheader('Retry-After', '60'))
             raise send_message.retry(countdown=retry_after)
 
         elif response.getcode() == 401:
-            raise AndroidDeviceSendMessageException('ClientLogin AUTH_TOKEN is '
-                                                    'invalid')
+            message_response.set_error('invalid_auth_token',
+                                       'ClientLogin AUTH_TOKEN is invalid')
+        elif response.getcode() == 200:
+            pass
+        else:
+            raise UnknownHttpErrorCodeException('Http error code: %i' % response.getcode())
 
-        result = [d.strip().lower() for d in response.read().split('=')]
-        if 'error' in result:
-            if result[1] == 'invalidregistration' or \
-               result[1] == 'notregistered':
-                dci.device.failed_push = True
-                dci.device.save()
-                raise AndroidDeviceNotRegisteredException(result[1])
-            elif result[1] == 'quotaexceeded':
-                # TODO: send an email
-                raise AndroidDeviceSendMessageException(
-                            'QuotaExceeded[dci=%d]: %s' %
-                            (device_channel_info_id, result[1]))
-            elif result[1] == 'devicequotaexceeded':
-                # TODO: send an email
-                raise AndroidDeviceSendMessageException(
-                            'DeviceQuotaExceeded[dci=%d]: %s' %
-                            (device_channel_info_id, result[1]))
-            elif result[1] == 'messagetoobig':
-                # TODO: write to database
-                # TODO: send an email 
-                raise AndroidDeviceSendMessageException(
-                            'MessageTooBig[dci=%d]: %s' %
-                            (device_channel_info_id, result[1]))
-            elif result[1] == 'missingcollapsekey':
-                # TODO: send an email
-                raise AndroidDeviceSendMessageException(
-                            'MissingCollapseKey[dci=%d]: %s' %
-                            (device_channel_info_id, result[1]))
+        try:
+            response_data = response.read()
+            key, data = [d.strip().lower() for d in response_data.split('=')]
+        except:
+            message_response.set_error('invalid_response', 'Response: %s' %
+                                       response_data)
+        if 'error' == key:
+            if data == 'invalidregistration':
+                message_response.set_error('invalid_registration')
+            elif data == 'notregistered':
+                message_response.set_error('not_registered')
+            elif data == 'quotaexceeded':
+                message_response.set_error('quota_exceeded')
+            elif data == 'devicequotaexceeded':
+                message_response.set_error('device_quota_exceeded')
+            elif data == 'messagetoobig':
+                message_response.set_error('message_too_big')
+            elif data == 'missingcollapsekey':
+                message_response.set_error('missing_collapse_key')
             else:
-                # TODO: send an email
-                raise AndroidDeviceSendMessageException(
-                            'Unknown error code[dci=%d]: %s' %
-                            (device_channel_info_id, result[1]))
-        elif 'id' in result:
-            from django.utils import timezone
-            dci.last_message = timezone.now()
-            dci.save()
-            return True
+                message_response.set_error('unknown_error_code',
+                                           'Error [%s]' % (data,))
+            return False
+        elif 'id' in key:
+            message_response.set_result(data)
+            return int(data)
+        else:
+            message_response.set_error('invalid_response', 'Response: %s' %
+                                       response_data)
+            return False
 
     except URLError, error:
-        message = 'URLError[dci=%d]: %s' % (device_channel_info_id, error,)
-        raise AndroidDeviceSendMessageException(message)
+        logger.error(('URLError: '
+                       'RegID [%s], CollapseKey [%s], error: %s') % \
+                       (self._request.get_registration_id,
+                        self._request.get_collapse_key, error))
+        message_response.set_error('url_error', error)
+        return False
 
     except SoftTimeLimitExceeded:
-        logger.warning('SoftTimeLimitExceeded[dci=%d]: %s' %
-                       (device_channel_info_id, error,))
+        logger.warning(('SoftTimeLimitExceeded: '
+                       'RegID [%s], CollapseKey [%s]') % \
+                       (self._request.get_registration_id,
+                        self._request.get_collapse_key,))
         return False
 
     return False
-
 

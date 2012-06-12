@@ -21,7 +21,7 @@ For urls.py file, add this code (or similar):
 	
 If you need to log errors or exceptions, add to the file settings.py like this code:
 
-	LOGGING['loggers']['django_c2dm'] = {
+	LOGGING['loggers']['django.c2dm'] = {
             'handlers': ['console', 'mail_admins'],
             'level': 'INFO',
             'propagate': True,
@@ -49,5 +49,26 @@ You can also set the delay_while_idle parameter to True to enable this feature.
 
 ### Register device
 
-TODO: How to do it.
+Device registration on the site, in steps:
+* application logs in to c2dm from google (receive registration_id)
+* application sends to the server registration_id and device_id
 
+     curl -X GET "http://<domain>/<path>/registration?device_id=<dev_id>&registration_id=<reg_id>"
+     
+* waiting for confirmation of registration by notification from the server c2dm.
+  You get:
+  
+	data.registration_token = <token>
+	 
+* confirm receipt of registration information
+
+     curl -X GET "http://<domain>/<path>/confirmation?device_id=<dev_id>&registration_token=<reg_token>"
+
+Where:
+* device_id - Unique ID for the device.  Simply used as a default method 
+                to specify a device. For example: hash of a phone number, or/and
+                or serial number. The ideal algorithm for this: sha256.
+                The maximum length is 64 bytes.
+* registration_id - Result of calling registration intent on the device. 
+                Subject to change.
+                The maximum length is 140 bytes.

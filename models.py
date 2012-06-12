@@ -87,6 +87,7 @@ class MessageData(models.Model):
         return self.name or hex(self.id)[2:]
     key_name.short_description = 'Key name'
 
+
     def __unicode__(self):
         return '%s' % (self.key_name())
 
@@ -201,4 +202,7 @@ class DeviceChannelInfo(models.Model):
         return u'%s [%s/%s]' % (self.group, self.device, self.channel)
 
 
-
+#def send_registration_token(sender, instance, created, raw, using, **kwargs):
+#    pass
+#
+#models.signals.post_save.connect(send_registration_token, sender=AndroidDevice)

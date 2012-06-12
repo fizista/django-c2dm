@@ -1,10 +1,17 @@
+import logging
+
 from django.http import HttpResponseRedirect, HttpResponse
 from django.core.exceptions import ValidationError
 from django.shortcuts import Http404
 from django.contrib.messages.api import get_messages
+from django.views.decorators.csrf import csrf_exempt
+from django.conf import settings
 
 from .models import AndroidDevice
 
+logger = logging.getLogger('django.c2dm')
+
+@csrf_exempt
 def set_registration_id(request):
     """Registration application"""
 
@@ -13,9 +20,11 @@ def set_registration_id(request):
         try:
             device_id = request.GET['device_id']
             registration_id = request.GET['registration_id']
-        except KeyError:
+
+        except KeyError, e:
             # When the input parameters are wrong, the script 
             # is terminated code http 400th
+            logger.debug('KeyError [%s] [%s]' % (e, request.GET,))
             return HttpResponse(status=400)
 
         try:
@@ -27,9 +36,11 @@ def set_registration_id(request):
             ad.registration_id = request.GET['registration_id']
             ad.full_clean()
             ad.save()
+            logger.info('Device re-registered [%s]' % device_id)
 
-        except ValidationError:
+        except ValidationError, e:
 
+            logger.debug('ValidationError [%s]' % e)
             return HttpResponse(status=400)
 
         except IndexError:
@@ -40,9 +51,11 @@ def set_registration_id(request):
                 ad.registration_id = request.GET['registration_id']
                 ad.full_clean()
                 ad.save()
+                logger.info('Device registered [%s]' % device_id)
 
             except ValidationError:
 
+                logger.debug('ValidationError [%s]' % e)
                 return HttpResponse(status=400)
 
         return HttpResponse(status=200)

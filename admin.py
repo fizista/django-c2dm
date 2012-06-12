@@ -31,7 +31,13 @@ from .models import AndroidDevice, MessageChannels, MessageGroups, \
                     DeviceChannelInfo, MessageData
 
 def registration_id(object):
-    return '%s...' % object.registration_id[:24]
+    max_len = 24
+    postfix = ' ...'
+    if len(object.registration_id) > max_len:
+        return '%s%s' % (object.registration_id[:(max_len - len(postfix))],
+                         postfix)
+    else:
+        return object.registration_id
 registration_id.short_description = _('Registration ID')
 
 
