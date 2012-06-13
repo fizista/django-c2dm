@@ -54,6 +54,7 @@ Device registration on the site, in steps:
 * application sends to the server registration_id and device_id
 
      curl -X GET "http://<domain>/<path>/registration?device_id=<dev_id>&registration_id=<reg_id>"
+     # if successful, returns the HTTP response code 200
      
 * waiting for confirmation of registration by notification from the server c2dm.
   You get:
@@ -63,6 +64,7 @@ Device registration on the site, in steps:
 * confirm receipt of registration information
 
      curl -X GET "http://<domain>/<path>/confirmation?device_id=<dev_id>&registration_token=<reg_token>"
+     # if successful, returns the HTTP response code 200
 
 Where:
 * device_id - Unique ID for the device.  Simply used as a default method 
@@ -72,3 +74,12 @@ Where:
 * registration_id - Result of calling registration intent on the device. 
                 Subject to change.
                 The maximum length is 140 bytes and minimum length is 8 bytes.
+                
+Errors:
+* Http 400 - invalid data(for example: minimum, maximum, or lack device_id or registration_id or registration_token
+* Http 500 - an application error
+* Http 501 - attempt to queries by a method other than GET for example, POST
+
+
+
+
