@@ -9,7 +9,7 @@ required to send a message through C2DM as well as several helper functions.
 
 Using django-c2dm is easy.  Add the following line to your settings.py file: 
 
-    C2DM_AUTH_TOKEN = 'YOUR_PUSH_ACCOUNT_AUTH_TOKEN'
+    C2DM_AUTH_TOKEN = 'YOUR_PUSH_ACCOUNT_<center></center><center></center><s></s>&laquo;AUTH_TOKEN'
 
 Where YOUR_PUSH_ACCOUNT_AUTH_TOKEN is the ClientLogin token for your push account.
 
@@ -50,35 +50,40 @@ You can also set the delay_while_idle parameter to True to enable this feature.
 ### Register device
 
 Device registration on the site, in steps:
-* application logs in to c2dm from google (receive registration_id)
-* application sends to the server registration_id and device_id
 
-    curl -X GET "http://<domain>/<path>/registration?device_id=<dev_id>&registration_id=<reg_id>"
-    # if successful, returns the HTTP response code 200
+- application logs in to c2dm from google (receive registration_id)
+
+- application sends to the server registration_id and device_id
+
+         curl -X GET "http://<domain>/<path>/registration?device_id=<dev_id>&registration_id=<reg_id>"
+         # if successful, returns the HTTP response code 200
      
-* waiting for confirmation of registration by notification from the server c2dm.
+- waiting for confirmation of registration by notification from the server c2dm.
   You get:
   
-    data.registration_token = <token>
+         data.registration_token = <token>
 	 
-* confirm receipt of registration information
+- confirm receipt of registration information
 
-    curl -X GET "http://<domain>/<path>/confirmation?device_id=<dev_id>&registration_token=<reg_token>"
-    # if successful, returns the HTTP response code 200
+         curl -X GET "http://<domain>/<path>/confirmation?device_id=<dev_id>&registration_token=<reg_token>"
+         # if successful, returns the HTTP response code 200
 
 Where:
-* device_id - Unique ID for the device.  Simply used as a default method 
+
+- device_id - Unique ID for the device.  Simply used as a default method 
                 to specify a device. For example: hash of a phone number, or/and
                 or serial number. The ideal algorithm for this: sha256.
                 The maximum length is 64 bytes, and minimum length is 8 bytes.
-* registration_id - Result of calling registration intent on the device. 
+
+- registration_id - Result of calling registration intent on the device. 
                 Subject to change.
                 The maximum length is 140 bytes and minimum length is 8 bytes.
                 
 Errors:
-* Http 400 - invalid data(for example: minimum, maximum, or lack device_id or registration_id or registration_token
-* Http 500 - an application error
-* Http 501 - attempt to queries by a method other than GET for example, POST
+
+- Http 400 - invalid data(for example: minimum, maximum, or lack device_id or registration_id or registration_token
+- Http 500 - an application error
+- Http 501 - attempt to queries by a method other than GET for example, POST
 
 
 

@@ -128,9 +128,9 @@ def set_registration_id(request):
                 logger.debug('ValidationError [%s]' % e)
                 return HttpResponse(status=400)
 
+    else:
         return HttpResponse(status=501)
-    # POST,... http 404
-    raise Http404
+    return HttpResponse(status=500)
 
 @csrf_exempt
 def check_token(request):
@@ -165,5 +165,6 @@ def check_token(request):
                         (device_id, registration_token))
             return HttpResponse(status=400)
 
-    # POST,... http 404
-    raise Http404
+    else:
+        return HttpResponse(status=501)
+    return HttpResponse(status=500)
