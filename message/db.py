@@ -75,4 +75,27 @@ class MessageResponse(base.MessageResponse):
         self.set_failed_push()
         super(MessageResponse, self).error_not_registered()
 
+class MessageResponseStandAlone(base.MessageResponse):
+
+    def __init__(self, device_id):
+        self._device_id = device_id
+        super(MessageResponseStandAlone, self).__init__()
+
+    def set_failed_push(self):
+        try:
+            ad = AndroidDevice.objects.get(pk=self._device_id)
+            ad.failed_push = True
+            ad.save()
+        except DeviceChannelInfo.DoesNotExist:
+            pass
+        except AndroidDevice.DoesNotExist:
+            pass
+
+    def error_invalid_registration(self):
+        self.set_failed_push()
+        super(MessageResponseStandAlone, self).error_invalid_registration()
+
+    def error_not_registered(self):
+        self.set_failed_push()
+        super(MessageResponseStandAlone, self).error_not_registered()
 

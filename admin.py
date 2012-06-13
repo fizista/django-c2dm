@@ -27,8 +27,12 @@ from django.contrib import admin
 from django.utils.translation import ugettext_lazy as _
 from django.utils.timezone import get_current_timezone, get_default_timezone
 
-from .models import AndroidDevice, MessageChannels, MessageGroups, \
-                    DeviceChannelInfo, MessageData
+from django_c2dm.models import AndroidDevice, \
+                                AndroidDeviceToken, \
+                                MessageChannels, \
+                                MessageGroups, \
+                                DeviceChannelInfo, \
+                                MessageData
 
 def registration_id(object):
     max_len = 24
@@ -46,6 +50,16 @@ class AndroidDeviceAdmin(admin.ModelAdmin):
         'device_id',
         registration_id,
         'failed_push'
+    )
+
+
+class AndroidDeviceTokenAdmin(admin.ModelAdmin):
+    list_display = (
+        'device',
+        'registration_id',
+        'change_date',
+        'confirm',
+        'token',
     )
 
 
@@ -107,4 +121,5 @@ admin.site.register(DeviceChannelInfo, DeviceChannelInfoAdmin)
 admin.site.register(MessageData, MessageDataAdmin)
 admin.site.register(MessageChannels, MessageChannelsAdmin)
 admin.site.register(MessageGroups, MessageGroupsAdmin)
+admin.site.register(AndroidDeviceToken, AndroidDeviceTokenAdmin)
 admin.site.register(AndroidDevice, AndroidDeviceAdmin)

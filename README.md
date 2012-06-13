@@ -68,7 +68,7 @@ Where:
 * device_id - Unique ID for the device.  Simply used as a default method 
                 to specify a device. For example: hash of a phone number, or/and
                 or serial number. The ideal algorithm for this: sha256.
-                The maximum length is 64 bytes.
+                The maximum length is 64 bytes, and minimum length is 8 bytes.
 * registration_id - Result of calling registration intent on the device. 
                 Subject to change.
-                The maximum length is 140 bytes.
+                The maximum length is 140 bytes and minimum length is 8 bytes.

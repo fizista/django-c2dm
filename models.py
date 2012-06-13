@@ -35,7 +35,7 @@ from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
 
 MAX_MESSAGE_SIZE = 1024
-
+REGISTRATION_TOKEN_LEN = 24
 
 class AndroidDevice(models.Model):
     '''
@@ -50,10 +50,8 @@ class AndroidDevice(models.Model):
     last_messaged - When did we last send a push to the device
     failed_push - Have we had a failure when pushing to this device? Flag it here.
     '''
-    device_id = models.CharField(max_length=64, unique=True) # hash of a phone 
-                                                             # number, or serial 
-                                                             # number. The best use for this sha256
-    registration_id = models.CharField(max_length=140)
+    device_id = models.CharField(max_length=64, unique=True)
+    registration_id = models.CharField(max_length=140, default='', blank=True)
     failed_push = models.BooleanField(default=False)
 
     class Meta:
@@ -64,6 +62,40 @@ class AndroidDevice(models.Model):
     def __unicode__(self):
         return '%s' % self.device_id
 
+class AndroidDeviceToken(models.Model):
+
+    device = models.ForeignKey(AndroidDevice)
+    registration_id = models.CharField(max_length=140)
+    change_date = models.DateTimeField(auto_now=True,
+                          editable=False,
+                          verbose_name=_(u'time of the last change'))
+    token = models.CharField(max_length=REGISTRATION_TOKEN_LEN,
+                             blank=True, null=True,
+                             editable=False, verbose_name=_(u'token'))
+    confirm = models.BooleanField(default=False,
+                          verbose_name=_(u'was confirmed registration'))
+#    sent = models.BooleanField(default=False,
+#                          verbose_name=_(u'token has been sent'))
+
+
+    def save(self, *args, **kwargs):
+        # generate token
+        if not self.token:
+            import random
+            part1 = ''.join([chr(random.randrange(1, 254))
+                             for i in range(1000)])
+            part2 = str(timezone.now())
+            self.token = hashlib.sha512(part1 + part2).\
+                            hexdigest()[:REGISTRATION_TOKEN_LEN]
+        super(AndroidDeviceToken, self).save(*args, **kwargs)
+
+    class Meta:
+        ordering = ['device', 'change_date']
+        verbose_name = _(u'Android device registration token')
+        verbose_name_plural = _(u'Android device registration tokens')
+
+    def __unicode__(self):
+        return '%s - %s...' % (self.device_id, self.token[:10])
 
 class MessageData(models.Model):
     '''

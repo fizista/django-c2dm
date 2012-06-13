@@ -12,10 +12,21 @@ class Migration(SchemaMigration):
         db.create_table('django_c2dm_androiddevice', (
             ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
             ('device_id', self.gf('django.db.models.fields.CharField')(unique=True, max_length=64)),
-            ('registration_id', self.gf('django.db.models.fields.CharField')(max_length=140)),
+            ('registration_id', self.gf('django.db.models.fields.CharField')(default='', max_length=140, blank=True)),
             ('failed_push', self.gf('django.db.models.fields.BooleanField')(default=False)),
         ))
         db.send_create_signal('django_c2dm', ['AndroidDevice'])
+
+        # Adding model 'AndroidDeviceToken'
+        db.create_table('django_c2dm_androiddevicetoken', (
+            ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
+            ('device', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['django_c2dm.AndroidDevice'])),
+            ('registration_id', self.gf('django.db.models.fields.CharField')(max_length=140)),
+            ('change_date', self.gf('django.db.models.fields.DateTimeField')(auto_now=True, blank=True)),
+            ('token', self.gf('django.db.models.fields.CharField')(max_length=24, null=True, blank=True)),
+            ('confirm', self.gf('django.db.models.fields.BooleanField')(default=False)),
+        ))
+        db.send_create_signal('django_c2dm', ['AndroidDeviceToken'])
 
         # Adding model 'MessageData'
         db.create_table('django_c2dm_messagedata', (
@@ -70,6 +81,9 @@ class Migration(SchemaMigration):
         # Deleting model 'AndroidDevice'
         db.delete_table('django_c2dm_androiddevice')
 
+        # Deleting model 'AndroidDeviceToken'
+        db.delete_table('django_c2dm_androiddevicetoken')
+
         # Deleting model 'MessageData'
         db.delete_table('django_c2dm_messagedata')
 
@@ -92,7 +106,16 @@ class Migration(SchemaMigration):
             'device_id': ('django.db.models.fields.CharField', [], {'unique': 'True', 'max_length': '64'}),
             'failed_push': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'registration_id': ('django.db.models.fields.CharField', [], {'max_length': '140'})
+            'registration_id': ('django.db.models.fields.CharField', [], {'default': "''", 'max_length': '140', 'blank': 'True'})
+        },
+        'django_c2dm.androiddevicetoken': {
+            'Meta': {'ordering': "['device', 'change_date']", 'object_name': 'AndroidDeviceToken'},
+            'change_date': ('django.db.models.fields.DateTimeField', [], {'auto_now': 'True', 'blank': 'True'}),
+            'confirm': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
+            'device': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['django_c2dm.AndroidDevice']"}),
+            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
+            'registration_id': ('django.db.models.fields.CharField', [], {'max_length': '140'}),
+            'token': ('django.db.models.fields.CharField', [], {'max_length': '24', 'null': 'True', 'blank': 'True'})
         },
         'django_c2dm.devicechannelinfo': {
             'Meta': {'ordering': "['group', 'device', 'channel']", 'unique_together': "(('device', 'channel', 'group'),)", 'object_name': 'DeviceChannelInfo'},
