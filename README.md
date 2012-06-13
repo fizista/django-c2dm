@@ -53,18 +53,18 @@ Device registration on the site, in steps:
 * application logs in to c2dm from google (receive registration_id)
 * application sends to the server registration_id and device_id
 
-     curl -X GET "http://<domain>/<path>/registration?device_id=<dev_id>&registration_id=<reg_id>"
-     # if successful, returns the HTTP response code 200
+    curl -X GET "http://<domain>/<path>/registration?device_id=<dev_id>&registration_id=<reg_id>"
+    # if successful, returns the HTTP response code 200
      
 * waiting for confirmation of registration by notification from the server c2dm.
   You get:
   
-	data.registration_token = <token>
+    data.registration_token = <token>
 	 
 * confirm receipt of registration information
 
-     curl -X GET "http://<domain>/<path>/confirmation?device_id=<dev_id>&registration_token=<reg_token>"
-     # if successful, returns the HTTP response code 200
+    curl -X GET "http://<domain>/<path>/confirmation?device_id=<dev_id>&registration_token=<reg_token>"
+    # if successful, returns the HTTP response code 200
 
 Where:
 * device_id - Unique ID for the device.  Simply used as a default method 
