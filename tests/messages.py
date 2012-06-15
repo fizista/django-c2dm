@@ -10,6 +10,8 @@ from django.core.exceptions import ValidationError
 from django.utils.timezone import utc
 from django.utils import timezone
 from django.core.exceptions import ObjectDoesNotExist
+from django.db import transaction
+from django.db import connection
 
 from django_c2dm.models import AndroidDevice, MessageData, MessageChannels, \
                                MessageGroups, DeviceChannelInfo
@@ -165,8 +167,11 @@ class MessageDbRequestTest(MessageRequestTest):
         self.assertEqual(MessageChannels.objects.get(pk=m.pk).name, 'empty')
 
         # duplicate
-        self.assertRaises(IntegrityError, MessageChannels(name='empty').save)
+        with self.assertRaises(IntegrityError):
+            m = MessageChannels(name='empty')
+            m.save()
 
+        connection._rollback()
 
         # some data
         some_data = MessageChannels(name='some_data')
