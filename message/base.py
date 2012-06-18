@@ -109,5 +109,8 @@ class MessageResponse(object):
     def error_invalid_response(self):
         raise InvalidResponseException(self.get_error_data(), self._logger)
 
+    def error_mismatch_sender_id(self):
+        raise MismatchSenderId(self.get_error_data(), self._logger)
+
     def error_not_implemented(self):
         raise NotImplementedError('%s [%s]' % (self.get_error_name(), self.get_error_data()))

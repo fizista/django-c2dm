@@ -54,4 +54,7 @@ class ErrorInvalidAuthTokenException(TaskException): pass
 class InvalidResponseException(TaskException): pass
 
 
+class MismatchSenderId(TaskException): pass
+
+
 class UnknownHttpErrorCodeException(TaskException): pass

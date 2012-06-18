@@ -79,6 +79,8 @@ def send_message(message_request, message_response, **kwargs):
                 message_response.set_error('message_too_big')
             elif data == 'missingcollapsekey':
                 message_response.set_error('missing_collapse_key')
+            elif data == 'mismatchsenderid':
+                message_response.set_error('mismatch_sender_id')
             else:
                 message_response.set_error('unknown_error_code',
                                            'Error [%s]' % (data,))
