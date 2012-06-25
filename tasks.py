@@ -96,16 +96,16 @@ def send_message(message_request, message_response, **kwargs):
     except URLError, error:
         logger.error(('URLError: '
                        'RegID [%s], CollapseKey [%s], error: %s') % \
-                       (self._request.get_registration_id,
-                        self._request.get_collapse_key, error))
+                       (message_request.get_registration_id(),
+                        message_request.get_collapse_key(), error))
         message_response.set_error('url_error', error)
         return False
 
     except SoftTimeLimitExceeded:
         logger.warning(('SoftTimeLimitExceeded: '
                        'RegID [%s], CollapseKey [%s]') % \
-                       (self._request.get_registration_id,
-                        self._request.get_collapse_key,))
+                       (message_request.get_registration_id(),
+                        message_request.get_collapse_key(),))
         return False
 
     return False
