@@ -36,6 +36,7 @@ from django.utils.translation import ugettext_lazy as _
 
 MAX_MESSAGE_SIZE = 1024
 REGISTRATION_TOKEN_LEN = 24
+REGISTRATION_ID_LEN = 180
 
 class AndroidDevice(models.Model):
     '''
@@ -51,7 +52,7 @@ class AndroidDevice(models.Model):
     failed_push - Have we had a failure when pushing to this device? Flag it here.
     '''
     device_id = models.CharField(max_length=64, unique=True)
-    registration_id = models.CharField(max_length=140, default='', blank=True)
+    registration_id = models.CharField(max_length=REGISTRATION_ID_LEN, default='', blank=True)
     failed_push = models.BooleanField(default=False)
 
     class Meta:
@@ -65,7 +66,7 @@ class AndroidDevice(models.Model):
 class AndroidDeviceToken(models.Model):
 
     device = models.ForeignKey(AndroidDevice)
-    registration_id = models.CharField(max_length=140)
+    registration_id = models.CharField(max_length=REGISTRATION_ID_LEN)
     change_date = models.DateTimeField(auto_now=True,
                           editable=False,
                           verbose_name=_(u'time of the last change'))

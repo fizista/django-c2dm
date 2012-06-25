@@ -5,7 +5,7 @@ from django.http import HttpRequest, HttpResponse, Http404
 from django.utils import timezone
 
 from django_c2dm.models import AndroidDevice, AndroidDeviceToken, \
-                                REGISTRATION_TOKEN_LEN
+                                REGISTRATION_TOKEN_LEN, REGISTRATION_ID_LEN
 from django_c2dm import views
 from django_c2dm.tests.adds import make_fake_urlopen
 
@@ -157,7 +157,7 @@ class RegistrationTest(unittest.TestCase):
                        {
                        'device_id': '1234567890',
                        'registration_id': ''.join([str(i % 10)
-                                                   for i in range(150)])
+                                                   for i in range(REGISTRATION_ID_LEN + 1)])
                        },
                        400)
 
