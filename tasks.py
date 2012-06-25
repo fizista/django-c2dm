@@ -87,7 +87,7 @@ def send_message(message_request, message_response, **kwargs):
             return False
         elif 'id' in key:
             message_response.set_result(data)
-            return int(data)
+            return data
         else:
             message_response.set_error('invalid_response', 'Response: %s' %
                                        response_data)
