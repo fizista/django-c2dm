@@ -23,6 +23,8 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+import hashlib
+
 from django.contrib import admin
 from django.utils.translation import ugettext_lazy as _
 from django.utils.timezone import get_current_timezone, get_default_timezone
