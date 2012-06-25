@@ -36,7 +36,7 @@ from django.utils.translation import ugettext_lazy as _
 
 MAX_MESSAGE_SIZE = 1024
 REGISTRATION_TOKEN_LEN = 24
-REGISTRATION_ID_LEN = 180
+REGISTRATION_ID_LEN = 5000
 
 class AndroidDevice(models.Model):
     '''
