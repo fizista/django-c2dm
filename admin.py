@@ -38,8 +38,7 @@ def registration_id(object):
     max_len = 24
     postfix = ' ...'
     if len(object.registration_id) > max_len:
-        return '%s%s' % (object.registration_id[:(max_len - len(postfix))],
-                         postfix)
+        return 'md5(%s)' % (hashlib.md5(object.registration_id).hexdigest())
     else:
         return object.registration_id
 registration_id.short_description = _('Registration ID')
@@ -56,7 +55,7 @@ class AndroidDeviceAdmin(admin.ModelAdmin):
 class AndroidDeviceTokenAdmin(admin.ModelAdmin):
     list_display = (
         'device',
-        'registration_id',
+        registration_id,
         'change_date',
         'confirm',
         'token',
