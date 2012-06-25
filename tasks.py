@@ -98,7 +98,7 @@ def send_message(message_request, message_response, **kwargs):
                        'RegID [%s], CollapseKey [%s], error: %s') % \
                        (message_request.get_registration_id(),
                         message_request.get_collapse_key(), error))
-        message_response.set_error('url_error', error)
+        message_response.set_error('url_error', unicode(error))
         return False
 
     except SoftTimeLimitExceeded:
