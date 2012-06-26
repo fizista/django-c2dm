@@ -1,6 +1,6 @@
 import hashlib
 import urllib, urllib2
-from urllib2 import URLError
+from urllib2 import URLError, HTTPError
 
 from celery.exceptions import SoftTimeLimitExceeded
 from celery.decorators import task
@@ -45,17 +45,34 @@ def send_message(message_request, message_response, **kwargs):
         request = urllib2.Request(C2DM_URL, params, headers)
 
         # Make the request
-        response = urllib2.urlopen(request)
+        try:
+            response = urllib2.urlopen(request)
+            response_code = response.getcode()
 
-        if response.getcode() == 503:
+        except HTTPError, error:
+            response_code = error.code
+
+        except URLError, error:
+            logger.error(('URLError: '
+                           'RegID [%s], CollapseKey [%s], error: %s') % \
+                           (message_request.get_registration_id(),
+                            message_request.get_collapse_key(), error))
+            message_response.set_error('url_error', unicode(error))
+            return False
+
+        if response_code == 503:
             #server is temporarily unavailable. Wait Retry-After seconds
             retry_after = int(response.info().getheader('Retry-After', '60'))
             raise send_message.retry(countdown=retry_after)
 
-        elif response.getcode() == 401:
-            message_response.set_error('invalid_auth_token',
+        elif response_code == 401:
+            try:
+                settings.C2DM_AUTH_TOKEN.renew()
+                raise send_message.retry(countdown=5)
+            except:
+                message_response.set_error('invalid_auth_token',
                                        'ClientLogin AUTH_TOKEN is invalid')
-        elif response.getcode() == 200:
+        elif response_code == 200:
             pass
         else:
             raise UnknownHttpErrorCodeException('Http error code: %i' % response.getcode())
@@ -92,14 +109,6 @@ def send_message(message_request, message_response, **kwargs):
             message_response.set_error('invalid_response', 'Response: %s' %
                                        response_data)
             return False
-
-    except URLError, error:
-        logger.error(('URLError: '
-                       'RegID [%s], CollapseKey [%s], error: %s') % \
-                       (message_request.get_registration_id(),
-                        message_request.get_collapse_key(), error))
-        message_response.set_error('url_error', unicode(error))
-        return False
 
     except SoftTimeLimitExceeded:
         logger.warning(('SoftTimeLimitExceeded: '

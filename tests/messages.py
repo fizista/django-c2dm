@@ -382,7 +382,7 @@ class MessageSend(TestCase):
 
         tasks.urllib2.urlopen = make_fake_urlopen(response=' id  =   123  ')
         response = tasks.send_message(*self.get_message())
-        self.assertEqual(response, 123)
+        self.assertEqual(response, '123')
 
     def test_http_resonse_503_fail(self):
         tasks.urllib2.urlopen = make_fake_urlopen()
