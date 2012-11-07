@@ -23,6 +23,9 @@ def send_message(message_request, message_response, **kwargs):
     message_response.set_logger(logger)
     message_response.set_request(message_request)
 
+    if message_response.get_task_id() == None:
+        message_response.set_task_id(send_message.request.id)
+
     message_request.check_data()
 
     values = {

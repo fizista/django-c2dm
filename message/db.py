@@ -19,6 +19,9 @@ class MessageRequest(base.MessageRequest):
         super(MessageRequest, self).__init__()
 
     def check_data(self):
+        '''
+        Checks if the device is able to receive messages from c2dm server.
+        '''
         dci = DeviceChannelInfo.objects.get(pk=self._id)
         if dci.device.failed_push:
             raise FailedPushException(
@@ -44,6 +47,17 @@ class MessageResponse(base.MessageResponse):
     def __init__(self, obj_dci):
         self._id = obj_dci.id
         super(MessageResponse, self).__init__()
+
+    def set_task_id(self, id):
+        dci = DeviceChannelInfo.objects.get(pk=self._id)
+        if id == None:
+            dci.task = None
+        elif type(id) is boolean:
+            dci.task = 0
+        else:
+            dci.task = id
+        dci.save()
+        super(MessageResponse, self).set_task_id(self, id)
 
     def set_failed_push(self):
         try:

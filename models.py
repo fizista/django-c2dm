@@ -202,6 +202,8 @@ class MessageGroups(models.Model):
     '''
     name = models.CharField(max_length=50, unique=True,
                                                        verbose_name=_(u'name'))
+    devices = models.ManyToManyField(AndroidDevice)
+
     class Meta:
         verbose_name = _(u'Message group')
         verbose_name_plural = _(u'Message groups')
@@ -218,16 +220,19 @@ class DeviceChannelInfo(models.Model):
     '''
     device = models.ForeignKey(AndroidDevice)
     channel = models.ForeignKey(MessageChannels)
-    group = models.ForeignKey(MessageGroups)
     last_message = models.DateTimeField(blank=True, null=True,
                                         verbose_name=_(u'Last message'))
+    # task 
+    # null - not executed
+    # 0 - finished
+    # integer - id task
     task = models.IntegerField(blank=True, null=True,
                                verbose_name=_(u'Celery taks id'))
 
 
     class Meta:
-        unique_together = (('device', 'channel', 'group'),)
-        ordering = ['group', 'device', 'channel']
+        unique_together = (('device', 'channel'),)
+        ordering = ['device', 'channel']
         verbose_name = _(u'Device channel info')
         verbose_name_plural = _(u'Device channel info')
 

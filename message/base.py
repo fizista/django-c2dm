@@ -35,6 +35,17 @@ class MessageResponse(object):
         self._logger = None
         self._request = None
         self._error_data = ''
+        # _task_id
+        # None - if no task started
+        # True/False - if task finished(positive/negative)
+        # integer - task id
+        self._task_id = None
+
+    def set_task_id(self, id):
+        self._task_id = id
+
+    def get_task_id(self):
+        return self._task_id
 
     def set_request(self, request):
         self._request = request
@@ -60,9 +71,14 @@ class MessageResponse(object):
             self.__getattribute__('error_%s' % error_name)()
         except AttributeError:
             self.error_not_implemented()
+        self.set_task_id(False)
 
     def set_result(self, id):
+        '''
+        id - id from response c2dm server
+        '''
         self._id = id
+        self.set_task_id(True)
 
     def get_result(self):
         return self._id
