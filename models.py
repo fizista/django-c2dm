@@ -237,7 +237,7 @@ class DeviceChannelInfo(models.Model):
         verbose_name_plural = _(u'Device channel info')
 
     def __unicode__(self):
-        return u'%s [%s/%s]' % (self.group, self.device, self.channel)
+        return u'%s [%s/%s]' % (self.device, self.channel)
 
 
 #def send_registration_token(sender, instance, created, raw, using, **kwargs):

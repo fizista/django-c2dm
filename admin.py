@@ -86,10 +86,9 @@ class MessageChannelsAdmin(admin.ModelAdmin):
 
 class DeviceChannelInfoInlineAdmin(admin.TabularInline):
     model = DeviceChannelInfo
-    fk_name = 'group'
     verbose_name = _('List devices')
     verbose_name_plural = _('List devices')
-    readonly_fields = ('device', 'channel', 'group', 'last_message', 'task')
+    readonly_fields = ('device', 'channel', 'last_message', 'task')
     ordering = ('device',)
 
 

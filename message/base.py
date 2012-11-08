@@ -78,7 +78,7 @@ class MessageResponse(object):
         id - id from response c2dm server
         '''
         self._id = id
-        self.set_task_id(True)
+        MessageResponse.set_task_id(self, True)
 
     def get_result(self):
         return self._id

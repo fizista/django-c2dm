@@ -144,7 +144,6 @@ class MessageDbRequestTest(MessageRequestTest):
         dci = DeviceChannelInfo()
         dci.device = ad
         dci.channel = mc
-        dci.group = mg
         dci.save()
 
         return msg_db.MessageRequest(dci, self.get_input_delay_while_idle())
@@ -540,7 +539,6 @@ class MessageDbSend(MessageSend):
         dci = DeviceChannelInfo()
         dci.device = ad
         dci.channel = mc
-        dci.group = mg
         dci.save()
 
         self.dci_id = dci.id

@@ -57,7 +57,7 @@ class MessageResponse(base.MessageResponse):
         else:
             dci.task = id
         dci.save()
-        super(MessageResponse, self).set_task_id(self, id)
+        super(MessageResponse, self).set_task_id(id)
 
     def set_failed_push(self):
         try:
