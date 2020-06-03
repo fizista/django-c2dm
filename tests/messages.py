@@ -191,7 +191,7 @@ class MessageDbRequestTest(MessageRequestTest):
         too_much_data = MessageChannels(name='too_much_data')
         too_much_data.save()
         try:
-            for i in range(1, 1000):
+            for _ in range(1, 1000):
                 md = MessageData(data=('xy' * 5))
                 md.save()
                 too_much_data.message.add(md)
@@ -373,7 +373,6 @@ class MessageSend(TestCase):
     def get_message(self):
         'Return (obj[type MessageRequest],object[type MessageResponse])'
         raise NotImplementedError('get_collapse_key')
-        return message_request, message_response
 
 
     def test_http_resonse_200_success(self):

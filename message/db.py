@@ -50,7 +50,7 @@ class MessageResponse(base.MessageResponse):
 
     def set_task_id(self, id):
         dci = DeviceChannelInfo.objects.get(pk=self._id)
-        if id == None:
+        if id is None:
             dci.task = None
         elif type(id) is boolean:
             dci.task = 0

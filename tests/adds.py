@@ -23,12 +23,7 @@ class TestHandler(logging.handlers.BufferingHandler):
         """
         Look for a saved dict whose keys/values match the supplied arguments.
         """
-        result = False
-        for d in self.buffer:
-            if self.matcher.matches(d, **kwargs):
-                result = True
-                break
-        return result
+        return any(self.matcher.matches(d, **kwargs) for d in self.buffer)
 
 class Matcher(object):
 
